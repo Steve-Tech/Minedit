@@ -1,0 +1,19 @@
+name: MCeddit
+main: me.steve8playz.MCeddit
+version: 1.0
+description: A Simple way to link Minecraft with Reddit
+author: Steve8Playz
+api-version: 1.13
+commands:
+  LinkReddit:
+    description: Link your Minecraft account with your Reddit Account
+    usage: /<command> <reddit username> [player]
+    permission: MCeddit.link
+    permission-message: You don't have permission to use this command!
+    default: true
+  GetReddit:
+    description: Look at the Reddit API using the plugin
+    usage: /<command> <API Object> [player]
+    permission: MCeddit.get
+    permission-message: You don't have permission to use this command!
+    default: false
