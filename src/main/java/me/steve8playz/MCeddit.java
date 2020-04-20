@@ -1,108 +1,96 @@
 package me.steve8playz;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import org.bukkit.*;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Firework;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.Arrays;
 
-public class MCeddit extends JavaPlugin implements Listener {
+public class MCeddit extends JavaPlugin {
     //Final Variables to put in Config file later
-    private final String messagePrefix = ChatColor.GOLD + "[MCeddit] ";
+    private File playerConfigFile;
+    private FileConfiguration playerConfig;
 
     @Override
     public void onEnable() {
-        getLogger().info("MCeddit v1.0 has been Enabled");
+        getLogger().info("MCeddit " + this.getDescription().getVersion() + " has been Enabled");
         getConfig().options().copyDefaults(true);
         saveConfig();
-        this.getServer().getPluginManager().registerEvents(this, this);
+        loadPlayerConfig();
+        getCommand("LinkReddit").setExecutor(new Commands(this));
+        getCommand("GetReddit").setExecutor(new Commands(this));
+        getCommand("Reddit").setExecutor(new Commands(this));
+        this.getServer().getPluginManager().registerEvents(new CakeDay(this), this);
     }
 
     @Override
     public void onDisable() {
         saveConfig();
-        getLogger().info("MCeddit v1.0 has been Disabled");
+        savePlayerConfig();
+        getLogger().info("MCeddit " + this.getDescription().getVersion() + " has been Disabled");
     }
 
+    public FileConfiguration getPlayerConfig() {
+        return playerConfig;
+    }
 
-    // Keeps track of the cooldowns for multiple players
-    private HashMap<String, Long> cooldowns = new HashMap<String, Long>();
+    public void setPlayerConfig(String arg1, Object arg2) {
+        playerConfig.set(arg1, arg2);
+    }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+    private void loadPlayerConfig() {
+        playerConfigFile = new File(getDataFolder(), "players.yml");
+        if (!playerConfigFile.exists()) {
+            playerConfigFile.getParentFile().mkdirs();
+            saveResource("players.yml", false);
+        }
 
-
-        if (player.hasPermission("mceddit.cakeday") && getConfig().contains(player.getUniqueId().toString())) {
-            long redditCreated = (long) Double.parseDouble(getReddit(getConfig().getString(player.getUniqueId().toString()), "created"));
-            if (compareUnix(System.currentTimeMillis() / 1000, redditCreated, "MM-dd")) {
-
-                // Cooldown to stop this from executing twice
-                // TODO: Find a better way of doing this
-                // TODO: Put cooldownTime into config
-                int cooldownTime = 86400;
-                if(cooldowns.containsKey(player.getName())) {
-                    long secondsLeft = ((cooldowns.get(player.getName())/1000)+cooldownTime) - (System.currentTimeMillis()/1000);
-                    if(secondsLeft>0) {
-                        // player.sendMessage("You cant use that commands for another "+ secondsLeft +" seconds!");
-                        return;
-                    }
-                }
-                cooldowns.put(player.getName(), System.currentTimeMillis());
-                // END Cooldown Code
-
-                getServer().broadcastMessage(ChatColor.GOLD + "It's " + player.getName() + "'s Reddit Cake Day Today!");
-                if (!player.hasPermission("mceddit.cakeday.givecake"))
-                    player.sendMessage(ChatColor.GOLD + "Happy Cake Day " + player.getName() + "!");
-                else {
-                    player.sendMessage(ChatColor.GOLD + "Happy Cake Day " + player.getName() + "! Here's a Cake to Celebrate!");
-                    player.getInventory().addItem(bakeCake(player.getName() + "'s Cake", "A Cake for your Reddit Cake Day"));
-                }
-                if (player.hasPermission("mceddit.cakeday.firework")) firework(player);
-            }
+        playerConfig = new YamlConfiguration();
+        try {
+            playerConfig.load(playerConfigFile);
+        } catch (IOException | InvalidConfigurationException e) {
+            e.printStackTrace();
         }
     }
 
-    public String getReddit(String username, String object) {
+    private void savePlayerConfig() {
+        playerConfigFile = new File(getDataFolder(), "players.yml");
         try {
-            String jsonS = "";
-            URL url = new URL("https://www.reddit.com/user/" + username + "/about.json");
+            playerConfig.save(playerConfigFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public JsonObject getRedditURL(String link) {
+        StringBuilder jsonSB = new StringBuilder();
+        try {
+            URL url = new URL(link);
             URLConnection conn = url.openConnection();
             conn.setRequestProperty("User-Agent", "MCeddit - A Simple Spigot Plugin to link Minecraft with Reddit");
             conn.connect();
             BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             String inputLine;
 
-            while((inputLine = in.readLine()) != null) {
-                jsonS+=inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                jsonSB.append(inputLine);
             }
-            Gson gson = new Gson();
-            JsonObject jsonObject = gson.fromJson(jsonS, JsonObject.class);
-            JsonObject data = jsonObject.get("data").getAsJsonObject();
-            String result = data.get(object).getAsString();
-
             in.close();
 
-            return result;
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(jsonSB.toString(), JsonObject.class);
+            return jsonObject.get("data").getAsJsonObject();
+
         } catch (Exception e) {
             if (e.getMessage() == null) {
                 getLogger().severe("An Unknown Error Occurred while getting to Reddit or Reading the Reddit API, it is possibly because of a bad JSON Object.");
@@ -116,81 +104,36 @@ public class MCeddit extends JavaPlugin implements Listener {
             }
             return null;
         }
-
     }
 
-    private boolean compareUnix(long unixSeconds, long compareUnixSeconds, String comparePattern) {
-        // Convert seconds to milliseconds
-        Date date = new java.util.Date(unixSeconds * 1000L);
-        Date dateCompare = new java.util.Date(compareUnixSeconds * 1000L);
-        // Format the date
-        SimpleDateFormat dateFormat = new java.text.SimpleDateFormat(comparePattern);
-        SimpleDateFormat dateFormatCompare = new java.text.SimpleDateFormat(comparePattern);
-        // Compare
-        return ((dateFormat.format(date)).equals(dateFormatCompare.format(dateCompare)));
+    public String getReddit(String username, String object) {
+        return getRedditURL("https://www.reddit.com/user/" + username + "/about.json").get(object).getAsString();
     }
 
-    private static ItemStack bakeCake(String itemName, String itemLore) {
-        ItemStack item = new ItemStack(Material.CAKE, 1);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(itemName);
-        ArrayList<String> lore = new ArrayList<String>();
-        lore.add(itemLore);
-        meta.setLore(lore);
-        item.setItemMeta(meta);
-        return item;
-    }
-
-    private static void firework(Player player) {
-        Location loc = player.getLocation();
-        Firework fw = loc.getWorld().spawn(loc, Firework.class);
-        FireworkMeta data = fw.getFireworkMeta();
-        Color color1 = Color.RED;
-        Color color2 = Color.AQUA;
-        data.addEffects(new FireworkEffect[] { FireworkEffect.builder().withColor(color1, color2).with(FireworkEffect.Type.STAR).build() });
-        fw.setFireworkMeta(data);
-    }
-
-    @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-
-        Player player = (Player) sender;
-        PlayerInventory inventory = player.getInventory();
-        // TODO: Make the linked account only to be changed once without admin permissions
-        if ((cmd.getName().equalsIgnoreCase("LinkReddit")) && (sender.hasPermission("mceddit.link"))) {
-            if (args.length == 1) {
-                if (sender instanceof Player) {
-                    getConfig().set(player.getUniqueId().toString(), args[0].replace("u/", ""));
-                    sender.sendMessage(messagePrefix + ChatColor.GREEN + "User Linked!");
-                } else getLogger().warning("You need to be a player to run this command.");
-            } else if (args.length == 2 && sender.hasPermission("mceddit.link.players")) {
-                if (Bukkit.getPlayer(args[0]).isOnline()) {
-                    getConfig().set(args[1], Bukkit.getPlayer(args[0]).getUniqueId());
-                    sender.sendMessage(messagePrefix + ChatColor.GREEN + "User Linked!");
-                } else sender.sendMessage(messagePrefix + ChatColor.RED + "Error: Player not Online.");
-            } else {
-                sender.sendMessage(messagePrefix + ChatColor.RED + "Usage: /LinkReddit <reddit username> [player]");
-            }
+    public String[][] getSubreddit(String name, String query) {
+        JsonObject data;
+        if (query != null) {
+            data = getRedditURL("https://www.reddit.com/r/" + name + ".json?limit=" + getConfig().getInt("PostLimit") +
+                    "&" + query);
+        } else {
+            data = getRedditURL("https://www.reddit.com/r/" + name + ".json?limit=" + getConfig().getInt("PostLimit"));
         }
-        if ((cmd.getName().equalsIgnoreCase("GetReddit")) && (sender.hasPermission("mceddit.get"))) {
-            if (args.length == 1) {
-                if (sender instanceof Player) {
-                    if (getConfig().contains(player.getUniqueId().toString())) {
-                        String message = getReddit(getConfig().getString(player.getUniqueId().toString()), args[0]);
-                        if (message != null) sender.sendMessage(message);
-                        else sender.sendMessage(messagePrefix + ChatColor.DARK_RED + "An Error Occurred. It is likely that you mistyped an Object in the API or there is no internet.");
-                    } else sender.sendMessage(messagePrefix + "Link your Reddit account first");
-                } else getLogger().warning("You need to be a player to run this command.");
-            } else if (args.length == 2 && sender.hasPermission("mceddit.get.players")) {
-                if (Bukkit.getPlayer(args[1]).isOnline()) {
-                    String message = getReddit(getConfig().getString(Bukkit.getPlayer(args[1]).getUniqueId().toString()), args[0]);
-                    if (message != null) sender.sendMessage(message);
-                    else sender.sendMessage(messagePrefix + ChatColor.DARK_RED + "An Error Occurred. " + ChatColor.RED + "It is likely that you mistyped an Object in the API or there is no internet.");
-                } else sender.sendMessage(messagePrefix + ChatColor.RED + "Error: Player not Online.");
-            } else {
-                sender.sendMessage(messagePrefix + ChatColor.RED + "Usage: /GetReddit <API Object> [player]");
-            }
+        JsonArray jsonPosts = data.get("children").getAsJsonArray();
+        String[] post;
+        String[][] posts = {};
+        for (int i = 0; i < getConfig().getInt("PostLimit"); i++) {
+            JsonObject jsonPost = jsonPosts.get(i).getAsJsonObject().get("data").getAsJsonObject();
+            post = new String[]{jsonPost.get("subreddit").getAsString(), jsonPost.get("title").getAsString(),
+                    jsonPost.get("score").getAsString(), jsonPost.get("author").getAsString(),
+                    jsonPost.get("num_comments").getAsString(), jsonPost.get("permalink").getAsString()};
+
+            posts = Arrays.copyOf(posts, posts.length + 1);
+            posts[posts.length - 1] = post;
         }
-        return true;
+
+        posts = Arrays.copyOf(posts, posts.length + 1);
+        posts[posts.length - 1] = new String[]{data.get("after").getAsString()};
+
+        return posts;
     }
 }
