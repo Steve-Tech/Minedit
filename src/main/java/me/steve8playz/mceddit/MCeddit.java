@@ -1,12 +1,14 @@
-package me.steve8playz;
+package me.steve8playz.mceddit;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.unbescape.html.HtmlEscape;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,6 +17,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class MCeddit extends JavaPlugin {
     //Final Variables to put in Config file later
@@ -27,9 +30,9 @@ public class MCeddit extends JavaPlugin {
         getConfig().options().copyDefaults(true);
         saveConfig();
         loadPlayerConfig();
-        getCommand("LinkReddit").setExecutor(new Commands(this));
-        getCommand("GetReddit").setExecutor(new Commands(this));
         getCommand("Reddit").setExecutor(new Commands(this));
+        getCommand("RedditPost").setExecutor(new Commands(this));
+        getCommand("LinkReddit").setExecutor(new Commands(this));
         this.getServer().getPluginManager().registerEvents(new CakeDay(this), this);
     }
 
@@ -72,7 +75,22 @@ public class MCeddit extends JavaPlugin {
         }
     }
 
-    public JsonObject getRedditURL(String link) {
+    public String markDown(String input) {
+        return input.replaceFirst("(\\*\\*).*?\\*\\*", ChatColor.BOLD.toString())
+                .replaceFirst("(__).*?__", ChatColor.BOLD.toString())
+                .replaceFirst(ChatColor.BOLD + ".*?(\\*\\*)", ChatColor.RESET.toString())
+                .replaceFirst(ChatColor.BOLD + ".*?(__)", ChatColor.RESET.toString())
+                .replaceFirst("(\\*).*?\\*", ChatColor.ITALIC.toString())
+                .replaceFirst("(_).*?_", ChatColor.ITALIC.toString())
+                .replaceFirst(ChatColor.ITALIC + ".*?(\\*)", ChatColor.RESET.toString())
+                .replaceFirst(ChatColor.ITALIC + ".*?(_)", ChatColor.RESET.toString())
+                .replaceFirst("(~~).*?~~", ChatColor.STRIKETHROUGH.toString())
+                .replaceFirst(ChatColor.STRIKETHROUGH + ".*?(~~)", ChatColor.RESET.toString())
+                + ChatColor.RESET;
+    }
+
+    // TODO: Make all web requests asynchronous
+    public StringBuilder getRedditURL(String link) {
         StringBuilder jsonSB = new StringBuilder();
         try {
             URL url = new URL(link);
@@ -87,9 +105,7 @@ public class MCeddit extends JavaPlugin {
             }
             in.close();
 
-            Gson gson = new Gson();
-            JsonObject jsonObject = gson.fromJson(jsonSB.toString(), JsonObject.class);
-            return jsonObject.get("data").getAsJsonObject();
+            return jsonSB;
 
         } catch (Exception e) {
             if (e.getMessage() == null) {
@@ -106,17 +122,28 @@ public class MCeddit extends JavaPlugin {
         }
     }
 
+    public JsonObject getRedditURLData(String link) {
+        Gson gson = new Gson();
+        JsonObject jsonObject = gson.fromJson(getRedditURL(link).toString(), JsonObject.class);
+        return jsonObject.get("data").getAsJsonObject();
+    }
+
+    public JsonArray getRedditURLArr(String link) {
+        Gson gson = new Gson();
+        return gson.fromJson(getRedditURL(link).toString(), JsonArray.class);
+    }
+
     public String getReddit(String username, String object) {
-        return getRedditURL("https://www.reddit.com/user/" + username + "/about.json").get(object).getAsString();
+        return getRedditURLData("https://www.reddit.com/user/" + username + "/about.json").get(object).getAsString();
     }
 
     public String[][] getSubreddit(String name, String query) {
         JsonObject data;
         if (query != null) {
-            data = getRedditURL("https://www.reddit.com/r/" + name + ".json?limit=" + getConfig().getInt("PostLimit") +
+            data = getRedditURLData("https://www.reddit.com/r/" + name + ".json?limit=" + getConfig().getInt("PostLimit") +
                     "&" + query);
         } else {
-            data = getRedditURL("https://www.reddit.com/r/" + name + ".json?limit=" + getConfig().getInt("PostLimit"));
+            data = getRedditURLData("https://www.reddit.com/r/" + name + ".json?limit=" + getConfig().getInt("PostLimit"));
         }
         JsonArray jsonPosts = data.get("children").getAsJsonArray();
         String[] post;
@@ -135,5 +162,47 @@ public class MCeddit extends JavaPlugin {
         posts[posts.length - 1] = new String[]{data.get("after").getAsString()};
 
         return posts;
+    }
+
+    public String[][] getPost(String permalink) {
+        JsonArray data = getRedditURLArr("https://www.reddit.com" + permalink + ".json");
+        JsonObject postOnly = data.get(0).getAsJsonObject().get("data").getAsJsonObject().get("children").getAsJsonArray().get(0).getAsJsonObject().get("data").getAsJsonObject();
+        JsonArray jsonComments = data.get(1).getAsJsonObject().get("data").getAsJsonObject().get("children").getAsJsonArray();
+
+        String postType;
+        String[] postData = new String[3];
+        postData[0] = postOnly.get("title").getAsString(); // Post Title
+
+        if (postOnly.has("post_hint")) {
+            postType = postOnly.get("post_hint").getAsString();
+        } else {
+            postType = "";
+        }
+
+        postData[2] = postType;
+        if (postOnly.has("selftext") && !postOnly.get("selftext").getAsString().isEmpty()) {
+            postData[1] = postOnly.get("selftext").getAsString();
+        } else if (postOnly.has("url") && !postOnly.get("url").getAsString().isEmpty()) {
+            postData[1] = postOnly.get("url").getAsString();
+        } else {
+            postData[1] = "";
+        }
+
+        String[] postText = new String[]{postOnly.get("subreddit").getAsString(), postOnly.get("title").getAsString(),
+                postOnly.get("score").getAsString(), postOnly.get("author").getAsString(),
+                postOnly.get("num_comments").getAsString(), postOnly.get("permalink").getAsString()};
+        String[] postComments = new String[jsonComments.size() + 1];
+        for (int i = 0; i < jsonComments.size(); i++){
+            try {
+                JsonObject jsonComment = jsonComments.get(i).getAsJsonObject().get("data").getAsJsonObject();
+                postComments[i] = jsonComment.get("author").getAsString() + ",\t" +
+                        HtmlEscape.unescapeHtml(jsonComment.get("body").getAsString().replace('\u00a0',' ').replace('\n', ' ')) + ",\t" + // Replace &nbsp; with a space
+                        jsonComment.get("score").getAsString() + ",\t";
+            } catch (NullPointerException ignored) {
+                postComments[i] = "";
+            }
+        }
+
+        return new String[][]{postData, postText, postComments};
     }
 }

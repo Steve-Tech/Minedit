@@ -24,6 +24,7 @@ hs_err_pid*
 
 # IntelliJ IDEA Files
 .idea/
+*.iml
 
 # Compiled Files
 target/

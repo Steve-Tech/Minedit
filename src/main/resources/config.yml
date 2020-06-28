@@ -2,5 +2,8 @@
 
 PluginPrefix: "&6[MCeddit]"
 DefaultSubreddit: "popular"
-PostLimit: 4
 BorderLength: 50
+PostLimit: 4
+CommentLimit: 2
+CommentLength: 100
+ImageHeight: 10
