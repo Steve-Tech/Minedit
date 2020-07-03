@@ -17,7 +17,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
-import java.util.Objects;
 
 public class MCeddit extends JavaPlugin {
     //Final Variables to put in Config file later
@@ -33,7 +32,7 @@ public class MCeddit extends JavaPlugin {
         getCommand("Reddit").setExecutor(new Commands(this));
         getCommand("RedditPost").setExecutor(new Commands(this));
         getCommand("LinkReddit").setExecutor(new Commands(this));
-        this.getServer().getPluginManager().registerEvents(new CakeDay(this), this);
+        getServer().getPluginManager().registerEvents(new CakeDay(this), this);
     }
 
     @Override
@@ -84,7 +83,6 @@ public class MCeddit extends JavaPlugin {
                 .replaceAll("~~(.*?)~~", ChatColor.STRIKETHROUGH + ending);
     }
 
-    // TODO: Make all web requests asynchronous
     public StringBuilder getRedditURL(String link) {
         StringBuilder jsonSB = new StringBuilder();
         try {
@@ -187,11 +185,11 @@ public class MCeddit extends JavaPlugin {
                 postOnly.get("score").getAsString(), postOnly.get("author").getAsString(),
                 postOnly.get("num_comments").getAsString(), postOnly.get("permalink").getAsString()};
         String[] postComments = new String[jsonComments.size() + 1];
-        for (int i = 0; i < jsonComments.size(); i++){
+        for (int i = 0; i < jsonComments.size(); i++) {
             try {
                 JsonObject jsonComment = jsonComments.get(i).getAsJsonObject().get("data").getAsJsonObject();
                 postComments[i] = jsonComment.get("author").getAsString() + ",\t" +
-                        HtmlEscape.unescapeHtml(jsonComment.get("body").getAsString().replace('\u00a0',' ').replace('\n', ' ')) + ",\t" + // Replace &nbsp; with a space
+                        HtmlEscape.unescapeHtml(jsonComment.get("body").getAsString().replace('\u00a0', ' ').replace('\n', ' ')) + ",\t" + // Replace &nbsp; with a space
                         jsonComment.get("score").getAsString() + ",\t";
             } catch (NullPointerException ignored) {
                 postComments[i] = "";
