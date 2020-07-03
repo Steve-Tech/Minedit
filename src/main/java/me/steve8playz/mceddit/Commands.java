@@ -107,7 +107,15 @@ public class Commands implements CommandExecutor {
                     title.setBold(true);
                     title.setUnderlined(true);
 
-                    TextComponent subtitle = new TextComponent("submitted by " + post[1][3] + " to r/" + post[1][0] + "\n" +
+                    String subreddit;
+
+                    if (post[1][0].startsWith("u_")) {
+                        subreddit = "u/" + post[1][0].substring(2);
+                    } else {
+                        subreddit = "r/" + post[1][0];
+                    }
+
+                    TextComponent subtitle = new TextComponent("submitted by " + post[1][3] + " to " + subreddit + "\n" +
                             post[1][2] + " upvotes with " + post[1][4] + " comments");
                     subtitle.setColor(ChatColor.GRAY.asBungee());
 
@@ -142,7 +150,7 @@ public class Commands implements CommandExecutor {
 
                     } else if (!post[0][1].isEmpty()) {
                         // Handles text posts
-                        body = new TextComponent(post[0][1]);
+                        body = new TextComponent(plugin.markDown(post[0][1], ChatColor.WHITE));
                         body.setColor(ChatColor.WHITE.asBungee());
                     } else {
                         // Handles other posts
@@ -156,23 +164,21 @@ public class Commands implements CommandExecutor {
                     for (int i = 0; i < post[2].length-1 && i < plugin.getConfig().getInt("CommentLimit"); i++) {
                         String[] comment = (post[2][i].split(",\t"));
 
-                        //String commentMD = plugin.markDown(comment[1]);
-                        String commentMD = comment[1];
-
-                        plugin.getLogger().info(commentMD);
+                        String commentMD = plugin.markDown(comment[1], ChatColor.GRAY);
+                        //String commentMD = comment[1];
 
                         // Shorten the comment if its too long
                         String commentShort;
                         int commentLimit = plugin.getConfig().getInt("CommentLength");
                         if (comment[1].length() > commentLimit) {
-                            commentShort = commentMD.substring(0,commentLimit) + ChatColor.RESET + "...\n";
+                            commentShort = commentMD.substring(0,commentLimit) + ChatColor.RESET + "...";
                         } else {
-                            commentShort = commentMD + '\n';
+                            commentShort = commentMD;
                         }
 
-                        commentsFormatted.append(ChatColor.WHITE + comment[0] + ChatColor.GRAY + " (" + comment[2] + ')' + ChatColor.WHITE + ": " +
-                                ChatColor.GRAY + commentMD + '\n');
-                        commentsFormattedShort.append(ChatColor.WHITE + comment[0] + ChatColor.GRAY + " (" + comment[2] + ')' + ChatColor.WHITE + ": " +
+                        commentsFormatted.append("\n" + ChatColor.WHITE + comment[0] + ChatColor.GRAY + " (" + comment[2] + ")" + ChatColor.WHITE + ": " +
+                                ChatColor.GRAY + commentMD);
+                        commentsFormattedShort.append("\n" + ChatColor.WHITE + comment[0] + ChatColor.GRAY + " (" + comment[2] + ")" + ChatColor.WHITE + ": " +
                                 ChatColor.GRAY + commentShort);
                     }
 

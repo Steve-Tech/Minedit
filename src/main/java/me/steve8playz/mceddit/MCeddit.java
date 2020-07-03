@@ -75,18 +75,13 @@ public class MCeddit extends JavaPlugin {
         }
     }
 
-    public String markDown(String input) {
-        return input.replaceFirst("(\\*\\*).*?\\*\\*", ChatColor.BOLD.toString())
-                .replaceFirst("(__).*?__", ChatColor.BOLD.toString())
-                .replaceFirst(ChatColor.BOLD + ".*?(\\*\\*)", ChatColor.RESET.toString())
-                .replaceFirst(ChatColor.BOLD + ".*?(__)", ChatColor.RESET.toString())
-                .replaceFirst("(\\*).*?\\*", ChatColor.ITALIC.toString())
-                .replaceFirst("(_).*?_", ChatColor.ITALIC.toString())
-                .replaceFirst(ChatColor.ITALIC + ".*?(\\*)", ChatColor.RESET.toString())
-                .replaceFirst(ChatColor.ITALIC + ".*?(_)", ChatColor.RESET.toString())
-                .replaceFirst("(~~).*?~~", ChatColor.STRIKETHROUGH.toString())
-                .replaceFirst(ChatColor.STRIKETHROUGH + ".*?(~~)", ChatColor.RESET.toString())
-                + ChatColor.RESET;
+    public String markDown(String input, ChatColor color) {
+        String ending = "$1" + ChatColor.RESET + color;
+        return input.replaceAll("\\*\\*(.*?)\\*\\*", ChatColor.BOLD + ending)
+                .replaceAll("__(.*?)__", ChatColor.BOLD + ending)
+                .replaceAll("\\*(.*?)\\*", ChatColor.ITALIC + ending)
+                .replaceAll("_(.*?)_", ChatColor.ITALIC + ending)
+                .replaceAll("~~(.*?)~~", ChatColor.STRIKETHROUGH + ending);
     }
 
     // TODO: Make all web requests asynchronous

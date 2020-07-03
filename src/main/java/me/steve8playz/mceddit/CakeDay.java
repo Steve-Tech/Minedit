@@ -54,7 +54,7 @@ public class CakeDay implements Listener {
 
         if (player.hasPermission("mceddit.cakeday") &&
                 plugin.getPlayerConfig().contains(player.getUniqueId().toString())) {
-            long redditCreated = Long.parseLong(plugin.getReddit(plugin.getPlayerConfig().getString(player.getUniqueId().toString()), "created"));
+            long redditCreated = (long) Double.parseDouble(plugin.getReddit(plugin.getPlayerConfig().getString(player.getUniqueId().toString()), "created"));
             if (compareUnix(System.currentTimeMillis() / 1000, redditCreated, "MM-dd")) {
                 if (!redeemedPlayers.contains(player.getUniqueId())) {
                     // Add player to an array if they've been given cake
