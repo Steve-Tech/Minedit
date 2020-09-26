@@ -19,7 +19,7 @@ commands:
     default: true
   LinkReddit:
     description: Link your Minecraft account with your Reddit Account
-    usage: /<command> <reddit username> [player]
+    usage: /<command> [code]
     permission: MCeddit.link
     permission-message: You don't have permission to use this command!
-    default: false
+    default: true

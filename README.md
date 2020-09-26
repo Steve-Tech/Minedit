@@ -1,5 +1,7 @@
 # MCeddit
 A Simple way to link Minecraft with Reddit
+## Setup
+You will need to create a Reddit app to link your account for the cake day welcoming. You can do this [here](https://www.reddit.com/prefs/apps), and set the app id and secret in the config.
 ## Commands
 - Reddit:
   - Description: Look at Reddit in game
@@ -13,7 +15,7 @@ A Simple way to link Minecraft with Reddit
   - Default: true
 - LinkReddit:
   - Description: Link your Minecraft account with your Reddit Account
-  - Usage: /\<command\> \<reddit username\> \[player\]
+  - Usage: /\<command\> \[Code\]
   - Permission: MCeddit.link
   - Default: true
 ## Credits

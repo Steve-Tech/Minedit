@@ -7,3 +7,8 @@ PostLimit: 4
 CommentLimit: 2
 CommentLength: 100
 ImageHeight: 10
+
+#Create an app here: https://www.reddit.com/prefs/apps
+redditClientID: client_id
+redditClientSecret: client_secret
+redditRedirectURI: https://Steve-Tech.github.io/MCeddit/redirect.html
