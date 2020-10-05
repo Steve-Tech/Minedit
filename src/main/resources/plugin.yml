@@ -23,3 +23,9 @@ commands:
     permission: MCeddit.link
     permission-message: You don't have permission to use this command!
     default: true
+  RedditVote:
+    description: Vote on a Reddit post
+    usage: /<command> <code|direction> <fullname>
+    permission: MCeddit.vote
+    permission-message: You don't have permission to use this command!
+    default: true

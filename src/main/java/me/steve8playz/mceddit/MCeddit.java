@@ -7,6 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.unbescape.html.HtmlEscape;
 
@@ -18,29 +19,36 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 
 public class MCeddit extends JavaPlugin {
     //Final Variables to put in Config file later
     private File playerConfigFile;
     private FileConfiguration playerConfig;
 
+    private final String userAgent = String.format("%1$s:%2$s:%3$s (by /u/SteveTech_)",
+            getServer().getVersion(), getDescription().getName(), getDescription().getVersion());
+
+    public HashMap<Player, Object[]> playerSessions = new HashMap<>();
+
     @Override
     public void onEnable() {
-        getLogger().info("MCeddit " + getDescription().getVersion() + " has been Enabled");
         getConfig().options().copyDefaults(true);
         saveConfig();
         loadPlayerConfig();
         getCommand("Reddit").setExecutor(new Commands(this));
         getCommand("RedditPost").setExecutor(new Commands(this));
         getCommand("LinkReddit").setExecutor(new Commands(this));
+        getCommand("RedditVote").setExecutor(new Commands(this));
         getServer().getPluginManager().registerEvents(new CakeDay(this), this);
+        getLogger().info(getDescription().getName() + ' ' + getDescription().getVersion() + " has been Enabled");
     }
 
     @Override
     public void onDisable() {
         saveConfig();
         savePlayerConfig();
-        getLogger().info("MCeddit " + getDescription().getVersion() + " has been Disabled");
+        getLogger().info(getDescription().getName() + ' ' + getDescription().getVersion() + " has been Disabled");
     }
 
     public FileConfiguration getPlayerConfig() {
@@ -86,15 +94,13 @@ public class MCeddit extends JavaPlugin {
 
     private void exceptionMessage(Exception e) {
         if (e.getMessage() == null) {
-            getLogger().severe("An Unknown Error Occurred while getting to Reddit or Reading the Reddit API, it is possibly because of a bad JSON Object.");
-            getLogger().warning("If there are any following errors from this plugin that is a result of this.");
-        } else if (e.getMessage().equals("www.reddit.com")) {
+            getLogger().severe("An Unknown Error Occurred while getting to Reddit or Reading the Reddit API.");
+        } else if (e.getMessage().equals("www.reddit.com") || e.getMessage().equals("oauth.reddit.com")) {
             getLogger().severe("An Error Occurred while getting to Reddit, it is very likely that there is no internet.");
-            getLogger().warning("If there are any following errors from this plugin that is a result of this.");
         } else {
             getLogger().severe("An Error Occurred while getting to Reddit: " + e.getMessage());
-            getLogger().warning("If there are any following errors from this plugin that is a result of this.");
         }
+        getLogger().warning("If there are any following errors from this plugin that is a result of this.");
     }
 
     public StringBuilder getRedditURL(String link) {
@@ -102,7 +108,7 @@ public class MCeddit extends JavaPlugin {
         try {
             URL url = new URL(link);
             URLConnection conn = url.openConnection();
-            conn.setRequestProperty("User-Agent", String.format("%1$s:MCeddit:%2$s (by /u/SteveTech_)", getServer().getVersion(), getDescription().getVersion()));
+            conn.setRequestProperty("User-Agent", userAgent);
             conn.connect();
             BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             String inputLine;
@@ -150,7 +156,8 @@ public class MCeddit extends JavaPlugin {
             JsonObject jsonPost = jsonPosts.get(i).getAsJsonObject().get("data").getAsJsonObject();
             post = new String[]{jsonPost.get("subreddit").getAsString(), jsonPost.get("title").getAsString(),
                     jsonPost.get("score").getAsString(), jsonPost.get("author").getAsString(),
-                    jsonPost.get("num_comments").getAsString(), jsonPost.get("permalink").getAsString()};
+                    jsonPost.get("num_comments").getAsString(), jsonPost.get("permalink").getAsString(),
+                    jsonPost.get("name").getAsString()};
 
             posts = Arrays.copyOf(posts, posts.length + 1);
             posts[posts.length - 1] = post;
@@ -167,23 +174,20 @@ public class MCeddit extends JavaPlugin {
         JsonObject postOnly = data.get(0).getAsJsonObject().get("data").getAsJsonObject().get("children").getAsJsonArray().get(0).getAsJsonObject().get("data").getAsJsonObject();
         JsonArray jsonComments = data.get(1).getAsJsonObject().get("data").getAsJsonObject().get("children").getAsJsonArray();
 
-        String postType;
-        String[] postData = new String[3];
-        postData[0] = postOnly.get("title").getAsString(); // Post Title
+        String[] postData = new String[]{postOnly.get("title").getAsString(), null, null, postOnly.get("name").getAsString()};
 
-        if (postOnly.has("post_hint")) {
-            postType = postOnly.get("post_hint").getAsString();
-        } else {
-            postType = "";
-        }
-
-        postData[2] = postType;
         if (postOnly.has("selftext") && !postOnly.get("selftext").getAsString().isEmpty()) {
             postData[1] = postOnly.get("selftext").getAsString();
         } else if (postOnly.has("url") && !postOnly.get("url").getAsString().isEmpty()) {
             postData[1] = postOnly.get("url").getAsString();
         } else {
             postData[1] = "";
+        }
+
+        if (postOnly.has("post_hint")) {
+            postData[2] = postOnly.get("post_hint").getAsString();
+        } else {
+            postData[2] = "";
         }
 
         String[] postText = new String[]{postOnly.get("subreddit").getAsString(), postOnly.get("title").getAsString(),
@@ -205,13 +209,13 @@ public class MCeddit extends JavaPlugin {
     }
 
 
-    public String getToken(String code) {
+    public Object[] getToken(String code) {
         try {
             URL url = new URL("https://www.reddit.com/api/v1/access_token");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("User-Agent", String.format("%1$s:MCeddit:%2$s (by /u/SteveTech_)", getServer().getVersion(), getDescription().getVersion()));
+            conn.setRequestProperty("User-Agent", userAgent);
             conn.setRequestProperty("Authorization", "Basic " +
                     new String(Base64.getEncoder().encode((getConfig().getString("redditClientID") + ':' + getConfig().getString("redditClientSecret")).getBytes())));
             String postData = "grant_type=authorization_code&code=" + URLEncoder.encode(code, StandardCharsets.UTF_8.toString()) + "&redirect_uri=" + getConfig().getString("redditRedirectURI");
@@ -230,9 +234,9 @@ public class MCeddit extends JavaPlugin {
             Gson gson = new Gson();
             JsonObject jsonObject = gson.fromJson(content.toString(), JsonObject.class);
 
-            return jsonObject.get("access_token").getAsString();
+            return new Object[]{jsonObject.get("access_token").getAsString(), jsonObject.get("expires_in").getAsLong()};
         } catch (Exception e) {
-            e.printStackTrace();
+            exceptionMessage(e);
             return null;
         }
     }
@@ -242,7 +246,7 @@ public class MCeddit extends JavaPlugin {
         try {
             URL url = new URL("https://oauth.reddit.com/api/v1/me");
             URLConnection conn = url.openConnection();
-            conn.setRequestProperty("User-Agent", String.format("%1$s:MCeddit:%2$s (by /u/SteveTech_)", getServer().getVersion(), getDescription().getVersion()));
+            conn.setRequestProperty("User-Agent", userAgent);
             conn.setRequestProperty("Authorization", "bearer " + token);
             conn.connect();
             BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -263,5 +267,31 @@ public class MCeddit extends JavaPlugin {
             return null;
         }
     }
+    public void tokenToVote(String token, String direction, String fullname) {
+        StringBuilder jsonSB = new StringBuilder();
+        try {
+            URL url = new URL("https://oauth.reddit.com/api/vote");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("User-Agent", userAgent);
+            conn.setRequestProperty("Authorization", "bearer " + token);
+            String postData = "dir=" + direction + "&id=" + URLEncoder.encode(fullname, StandardCharsets.UTF_8.toString()) + "&rank=1";
+            OutputStreamWriter writer = new OutputStreamWriter(
+                    conn.getOutputStream());
+            writer.write(postData);
+            writer.flush();
+            conn.connect();
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String inputLine;
 
+            while ((inputLine = in.readLine()) != null) {
+                jsonSB.append(inputLine);
+            }
+            in.close();
+
+        } catch (Exception e) {
+            exceptionMessage(e);
+        }
+    }
 }

@@ -15,6 +15,8 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Instant;
+import java.util.Arrays;
 
 public class Commands implements CommandExecutor {
     private final MCeddit plugin;
@@ -31,13 +33,16 @@ public class Commands implements CommandExecutor {
         if ((cmd.getName().equalsIgnoreCase("LinkReddit")) && (sender.hasPermission("mceddit.link"))) {
             if (sender instanceof Player) {
                 if (args.length == 1) {
+                    sender.sendMessage(messagePrefix + ChatColor.AQUA + "Loading...");
                     Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                        String token = plugin.getToken(args[0]);
+                        String token = (String) plugin.getToken(args[0])[0];
                         if (token != null) {
-                            plugin.setPlayerConfig(player.getUniqueId().toString(), plugin.tokenToUsername(token));
-                            sender.sendMessage(messagePrefix + ChatColor.GREEN + "User Linked!");
+                            String username = plugin.tokenToUsername(token);
+                            plugin.setPlayerConfig(player.getUniqueId().toString(), username);
+                            sender.sendMessage(messagePrefix + ChatColor.GREEN + "Successfully linked with " + username + '!');
                         } else {
-                            sender.sendMessage(messagePrefix + ChatColor.RED + "Invalid Code!");
+                            sender.sendMessage(messagePrefix + ChatColor.RED + "Invalid Code! Please try again...");
+                            ((Player) sender).performCommand("linkreddit");
                         }
                     });
                 } else {
@@ -46,15 +51,18 @@ public class Commands implements CommandExecutor {
                     link.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL,
                             "https://www.reddit.com/api/v1/authorize?client_id=" + plugin.getConfig().getString("redditClientID") + "&response_type=code&state=" +
                             ((Player) sender).getDisplayName() + "&redirect_uri=" + plugin.getConfig().getString("redditRedirectURI") + "&duration=temporary&scope=identity"));
-                    link.setColor(ChatColor.WHITE.asBungee());
                     player.spigot().sendMessage(link);
-                    sender.sendMessage(messagePrefix + ChatColor.AQUA + "Then type /LinkReddit <code> with the code given.");
+                    TextComponent suggest = new TextComponent(messagePrefix + ChatColor.AQUA +
+                            "Then type /LinkReddit <code> with the code given.");
+                    suggest.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/linkreddit "));
+                    player.spigot().sendMessage(suggest);
                 }
             } else plugin.getLogger().warning("You need to be a player to run this command.");
         }
 
         if ((cmd.getName().equalsIgnoreCase("reddit")) && (sender.hasPermission("mceddit.view"))) {
             if (sender instanceof Player) {
+                sender.sendMessage(messagePrefix + ChatColor.AQUA + "Loading...");
                 Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                     String subreddit; // Optional Arg 0
                     String[][] posts; // Optional Arg 1
@@ -106,6 +114,7 @@ public class Commands implements CommandExecutor {
         if ((cmd.getName().equalsIgnoreCase("redditpost")) && (sender.hasPermission("mceddit.view"))) {
             if (sender instanceof Player) {
                 if (args.length == 1 || args.length == 2) {
+                    sender.sendMessage(messagePrefix + ChatColor.AQUA + "Loading...");
                     Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                         String[][] post = plugin.getPost(args[0]);
 
@@ -127,8 +136,28 @@ public class Commands implements CommandExecutor {
                             subreddit = "r/" + post[1][0];
                         }
 
-                        TextComponent subtitle = new TextComponent("submitted by " + post[1][3] + " to " + subreddit + "\n" +
+                        TextComponent subtitle = new TextComponent();
+
+                        if (true) {
+                            TextComponent[] votes = {new TextComponent(" \u2191 "), new TextComponent(" \u2022 "), new TextComponent(" \u2193 ")};
+
+                            votes[0].setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/redditvote 1 " + post[0][3]));
+                            votes[1].setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/redditvote 0 " + post[0][3]));
+                            votes[2].setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/redditvote -1 " + post[0][3]));
+                            
+                            votes[0].setColor(ChatColor.WHITE.asBungee());
+                            votes[1].setColor(ChatColor.WHITE.asBungee());
+                            votes[2].setColor(ChatColor.WHITE.asBungee());
+
+                            subtitle.addExtra(votes[0]);
+                            subtitle.addExtra(votes[1]);
+                            subtitle.addExtra(votes[2]);
+                            subtitle.addExtra(" ");
+                        }
+
+                        subtitle.addExtra("submitted by " + post[1][3] + " to " + subreddit + "\n" +
                                 post[1][2] + " upvotes with " + post[1][4] + " comments");
+
                         subtitle.setColor(ChatColor.GRAY.asBungee());
 
                         TextComponent body;
@@ -215,7 +244,51 @@ public class Commands implements CommandExecutor {
                         player.spigot().sendMessage(border);
 
                     });
-                } else sender.sendMessage(messagePrefix + ChatColor.RED + "Usage: /RedditPost <Permalink>");
+                } else sender.sendMessage(messagePrefix + ChatColor.RED + "Usage: /RedditPost <permalink>");
+            } else plugin.getLogger().warning("You need to be a player to run this command.");
+        }
+
+
+        if ((cmd.getName().equalsIgnoreCase("redditvote")) && (sender.hasPermission("mceddit.vote"))) {
+            plugin.getLogger().info(Arrays.toString(plugin.playerSessions.get(player)) + Instant.now().getEpochSecond());
+            if (sender instanceof Player) {
+                if (args.length == 2) {
+                    if (plugin.playerSessions.containsKey(player) &&
+                            (Long) plugin.playerSessions.get(player)[1] > Instant.now().getEpochSecond()) {
+                        plugin.tokenToVote((String) plugin.playerSessions.get(player)[0], args[0], args[1]);
+                        switch (args[0]) {
+                            case "1": sender.sendMessage(messagePrefix + ChatColor.GOLD + "Upvoted"); break;
+                            case "0": sender.sendMessage(messagePrefix + ChatColor.YELLOW + "Removed Vote"); break;
+                            case "-1": sender.sendMessage(messagePrefix + ChatColor.BLUE + "Downvoted"); break;
+                            default: sender.sendMessage(messagePrefix + ChatColor.RED + "Error Voting"); return false;
+                        }
+                    } else {
+                        TextComponent start = new TextComponent(messagePrefix + ChatColor.AQUA +
+                                ChatColor.BOLD + ChatColor.UNDERLINE + "Click here to start a session");
+                        start.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL,
+                                "https://www.reddit.com/api/v1/authorize?client_id=" + plugin.getConfig().getString("redditClientID") + "&response_type=code&state=" +
+                                        ((Player) sender).getDisplayName() + "&redirect_uri=" + plugin.getConfig().getString("redditRedirectURI") + "&duration=temporary&scope=vote"));
+                        player.spigot().sendMessage(start);
+                        TextComponent suggest = new TextComponent(messagePrefix + ChatColor.AQUA +
+                                "Then type /RedditVote <code> with the code given.");
+                        suggest.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/redditvote "));
+                        player.spigot().sendMessage(suggest);
+                    }
+                } else if (args.length == 1) {
+                    sender.sendMessage(messagePrefix + ChatColor.AQUA + "Loading...");
+                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                        Object[] token = plugin.getToken(args[0]);
+                        if (token[0] != null) {
+                            plugin.playerSessions.put(player, new Object[]{token[0], (Long) token[1] + Instant.now().getEpochSecond()});
+                            sender.sendMessage(messagePrefix + ChatColor.GREEN + "Successfully started session!");
+                        } else {
+                            sender.sendMessage(messagePrefix + ChatColor.RED + "Invalid Code! Please try again...");
+                            ((Player) sender).performCommand("linkreddit");
+                        }
+                    });
+                } else {
+                    sender.sendMessage(messagePrefix + ChatColor.RED + "Usage: /RedditVote <code|direction> <fullname>");
+                }
             } else plugin.getLogger().warning("You need to be a player to run this command.");
         }
         return true;
