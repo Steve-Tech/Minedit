@@ -22,35 +22,44 @@ import java.util.Base64;
 import java.util.HashMap;
 
 public class MCeddit extends JavaPlugin {
-    //Final Variables to put in Config file later
+    // Create Player Storage File Variables
     private File playerConfigFile;
     private FileConfiguration playerConfig;
 
+    // Reddit requires a custom user agent to not get throttled
     private final String userAgent = String.format("%1$s:%2$s:%3$s (by /u/SteveTech_)",
             getServer().getVersion(), getDescription().getName(), getDescription().getVersion());
 
+    // Stores Temporary sessions (for upvotes)
     public HashMap<Player, Object[]> playerSessions = new HashMap<>();
 
     @Override
     public void onEnable() {
+        // Setup Configs
         getConfig().options().copyDefaults(true);
         saveConfig();
         loadPlayerConfig();
+        // Set Command Executors
         getCommand("Reddit").setExecutor(new Commands(this));
         getCommand("RedditPost").setExecutor(new Commands(this));
         getCommand("LinkReddit").setExecutor(new Commands(this));
         getCommand("RedditVote").setExecutor(new Commands(this));
+        // Register Events
         getServer().getPluginManager().registerEvents(new CakeDay(this), this);
+
         getLogger().info(getDescription().getName() + ' ' + getDescription().getVersion() + " has been Enabled");
     }
 
     @Override
     public void onDisable() {
+        // Save Configs
         saveConfig();
         savePlayerConfig();
+
         getLogger().info(getDescription().getName() + ' ' + getDescription().getVersion() + " has been Disabled");
     }
 
+    // Player Storage Files
     public FileConfiguration getPlayerConfig() {
         return playerConfig;
     }
@@ -83,6 +92,7 @@ public class MCeddit extends JavaPlugin {
         }
     }
 
+    // Convert Markdown to ChatColor
     public String markDown(String input, ChatColor color) {
         String ending = "$1" + ChatColor.RESET + color;
         return input.replaceAll("\\*\\*(.*?)\\*\\*", ChatColor.BOLD + ending)
@@ -92,6 +102,7 @@ public class MCeddit extends JavaPlugin {
                 .replaceAll("~~(.*?)~~", ChatColor.STRIKETHROUGH + ending);
     }
 
+    // Error Messages
     private void exceptionMessage(Exception e) {
         if (e.getMessage() == null) {
             getLogger().severe("An Unknown Error Occurred while getting to Reddit or Reading the Reddit API.");
@@ -103,6 +114,7 @@ public class MCeddit extends JavaPlugin {
         getLogger().warning("If there are any following errors from this plugin that is a result of this.");
     }
 
+    // Get Reddit API as a String
     public StringBuilder getRedditURL(String link) {
         StringBuilder jsonSB = new StringBuilder();
         try {
@@ -126,6 +138,7 @@ public class MCeddit extends JavaPlugin {
         }
     }
 
+    // Convert String to JSON
     public JsonObject getRedditURLData(String link) {
         Gson gson = new Gson();
         JsonObject jsonObject = gson.fromJson(getRedditURL(link).toString(), JsonObject.class);
@@ -137,10 +150,12 @@ public class MCeddit extends JavaPlugin {
         return gson.fromJson(getRedditURL(link).toString(), JsonArray.class);
     }
 
+    // Get a User's Reddit
     public String getReddit(String username, String object) {
         return getRedditURLData("https://www.reddit.com/user/" + username + "/about.json").get(object).getAsString();
     }
 
+    // Get Posts in a Subreddit
     public String[][] getSubreddit(String name, String query) {
         JsonObject data;
         if (query != null) {
@@ -169,6 +184,7 @@ public class MCeddit extends JavaPlugin {
         return posts;
     }
 
+    // Get Post Data [[Title, Content, Type], [Subreddit, Title, Score, Author, No. of Comments, Link], [Comments:[Author, Body, Score]]
     public String[][] getPost(String permalink) {
         JsonArray data = getRedditURLArr("https://www.reddit.com" + permalink + ".json");
         JsonObject postOnly = data.get(0).getAsJsonObject().get("data").getAsJsonObject().get("children").getAsJsonArray().get(0).getAsJsonObject().get("data").getAsJsonObject();
@@ -209,6 +225,7 @@ public class MCeddit extends JavaPlugin {
     }
 
 
+    // Convert Auth Code to Access Token
     public Object[] getToken(String code) {
         try {
             URL url = new URL("https://www.reddit.com/api/v1/access_token");
@@ -241,6 +258,7 @@ public class MCeddit extends JavaPlugin {
         }
     }
 
+    // Convert Access Token to Username
     public String tokenToUsername(String token) {
         StringBuilder jsonSB = new StringBuilder();
         try {
@@ -267,6 +285,8 @@ public class MCeddit extends JavaPlugin {
             return null;
         }
     }
+
+    // Upvote / Downvote using the Access Token
     public void tokenToVote(String token, String direction, String fullname) {
         StringBuilder jsonSB = new StringBuilder();
         try {
