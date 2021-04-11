@@ -28,3 +28,6 @@ hs_err_pid*
 
 # Compiled Files
 target/
+
+# Maven
+dependency-reduced-pom.xml
