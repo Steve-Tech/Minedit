@@ -1,4 +1,4 @@
-package me.steve8playz.mceddit;
+package me.stevetech.mceddit;
 
 import org.bukkit.*;
 import org.bukkit.entity.Firework;

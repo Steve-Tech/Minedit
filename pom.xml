@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>me.steve8playz.reddit</groupId>
+    <groupId>me.stevetech.mceddit</groupId>
     <artifactId>MCeddit</artifactId>
     <version>2.0-SNAPSHOT</version>
 
@@ -33,7 +33,7 @@
                     <relocations>
                         <relocation>
                             <pattern>org.unbescape.unbescape</pattern>
-                            <shadedPattern>mc.steve8playz.reddit.libraries.unbescape</shadedPattern>
+                            <shadedPattern>me.stevetech.mceddit.libraries.unbescape</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
@@ -65,7 +65,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.15.2-R0.1-SNAPSHOT</version>
+            <version>1.16.5-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
 

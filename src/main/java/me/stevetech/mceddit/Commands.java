@@ -1,4 +1,4 @@
-package me.steve8playz.mceddit;
+package me.stevetech.mceddit;
 
 import com.bobacadodl.imgmessage.ImageChar;
 import com.bobacadodl.imgmessage.ImageMessage;

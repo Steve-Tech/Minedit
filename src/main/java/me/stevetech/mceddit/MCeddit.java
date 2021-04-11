@@ -1,4 +1,4 @@
-package me.steve8playz.mceddit;
+package me.stevetech.mceddit;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
