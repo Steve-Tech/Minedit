@@ -138,7 +138,7 @@ public class Commands implements CommandExecutor {
 
                         TextComponent subtitle = new TextComponent();
 
-                        if (true) {
+                        if (sender.hasPermission("minedit.vote")) {
                             TextComponent[] votes = {new TextComponent(" \u2191 "), new TextComponent(" \u2022 "), new TextComponent(" \u2193 ")};
 
                             votes[0].setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/redditvote 1 " + post[0][3]));

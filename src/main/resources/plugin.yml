@@ -3,29 +3,35 @@ main: me.stevetech.minedit.Minedit
 version: 2.0
 description: A Simple way to link Minecraft with Reddit
 author: Steve8Playz
-api-version: 1.15
+api-version: 1.16
 commands:
   Reddit:
     description: Look at Reddit in game
     usage: /<command> [subreddit]
     permission: Minedit.view
     permission-message: You don't have permission to use this command!
-    default: true
   RedditPost:
     description: Look at a Reddit post in game
     usage: /<command> <permalink>
     permission: Minedit.view
     permission-message: You don't have permission to use this command!
-    default: true
   LinkReddit:
     description: Link your Minecraft account with your Reddit Account
     usage: /<command> [code]
     permission: Minedit.link
     permission-message: You don't have permission to use this command!
-    default: true
   RedditVote:
     description: Vote on a Reddit post
     usage: /<command> <code|direction> <fullname>
     permission: Minedit.vote
     permission-message: You don't have permission to use this command!
+permissions:
+  Minedit.view:
+    description: Look at Reddit in game
+    default: true
+  Minedit.link:
+    description: Link your Minecraft account with your Reddit Account
+    default: true
+  Minedit.vote:
+    description: Vote on a Reddit post
     default: true
