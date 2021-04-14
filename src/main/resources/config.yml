@@ -11,4 +11,4 @@ ImageHeight: 10
 #Create an app here: https://www.reddit.com/prefs/apps
 redditClientID: client_id
 redditClientSecret: client_secret
-redditRedirectURI: https://Steve-Tech.github.io/Minedit/redirect.html
+redditRedirectURI: https://Steve-Tech.github.io/Minedit/RedditAuth.html

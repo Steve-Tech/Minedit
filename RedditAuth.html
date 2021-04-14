@@ -10,22 +10,28 @@
 <div class="text-center mt-4 card">
     <div class="card-body">
         <h1>Reddit Authorisation Code</h1>
-        <h2>Hi <span id="username"></span>, your code is:
+        <h2 id="heading">Hi <span id="username"></span>, your code is:
             <pre><code id="code"></code></pre>
         </h2>
         <p>To link your account type:
-        <pre><code>/LinkReddit <span id="command"></span></code></pre>
+        <pre><code>/<span id="command">LinkReddit</span></code></pre>
         </p>
     </div>
 </div>
 <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const state = urlParams.get('state');
     const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    if (!(code || state)) {
+        document.getElementById("heading").hidden = true;
+    } else {
+        const state_arr = urlParams.get('state').split(",");
+        document.getElementById("username").innerHTML = state_arr[0];
+        document.getElementById("code").innerHTML = code;
+        document.getElementById("command").innerHTML = (state_arr.length > 1 ? state_arr[1] : "LinkReddit") + " " + code;
+    }
 
-    document.getElementById("username").innerHTML = state;
-    document.getElementById("code").innerHTML = code;
-    document.getElementById("command").innerHTML = code;
+
 </script>
 </body>
 </html>

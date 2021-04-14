@@ -50,7 +50,7 @@ public class Commands implements CommandExecutor {
                             ChatColor.BOLD + ChatColor.UNDERLINE + "Click here to link your Reddit account");
                     link.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL,
                             "https://www.reddit.com/api/v1/authorize?client_id=" + plugin.getConfig().getString("redditClientID") + "&response_type=code&state=" +
-                                    ((Player) sender).getDisplayName() + "&redirect_uri=" + plugin.getConfig().getString("redditRedirectURI") + "&duration=temporary&scope=identity"));
+                                    ((Player) sender).getDisplayName() + ",LinkReddit&redirect_uri=" + plugin.getConfig().getString("redditRedirectURI") + "&duration=temporary&scope=identity"));
                     player.spigot().sendMessage(link);
                     TextComponent suggest = new TextComponent(messagePrefix + ChatColor.AQUA +
                             "Then type /LinkReddit <code> with the code given.");
@@ -269,7 +269,7 @@ public class Commands implements CommandExecutor {
                                 ChatColor.BOLD + ChatColor.UNDERLINE + "Click here to start a session");
                         start.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL,
                                 "https://www.reddit.com/api/v1/authorize?client_id=" + plugin.getConfig().getString("redditClientID") + "&response_type=code&state=" +
-                                        ((Player) sender).getDisplayName() + "&redirect_uri=" + plugin.getConfig().getString("redditRedirectURI") + "&duration=temporary&scope=vote"));
+                                        ((Player) sender).getDisplayName() + ",RedditVote&redirect_uri=" + plugin.getConfig().getString("redditRedirectURI") + "&duration=temporary&scope=vote"));
                         player.spigot().sendMessage(start);
                         TextComponent suggest = new TextComponent(messagePrefix + ChatColor.AQUA +
                                 "Then type /RedditVote <code> with the code given.");
