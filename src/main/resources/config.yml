@@ -1,6 +1,6 @@
-# The Configuration File for Steve's MCeddit Plugin
+# The Configuration File for Steve's Minedit Plugin
 
-PluginPrefix: "&6[MCeddit]"
+PluginPrefix: "&6[Minedit]"
 DefaultSubreddit: "popular"
 BorderLength: 50
 PostLimit: 4
@@ -11,4 +11,4 @@ ImageHeight: 10
 #Create an app here: https://www.reddit.com/prefs/apps
 redditClientID: client_id
 redditClientSecret: client_secret
-redditRedirectURI: https://Steve-Tech.github.io/MCeddit/redirect.html
+redditRedirectURI: https://Steve-Tech.github.io/Minedit/redirect.html

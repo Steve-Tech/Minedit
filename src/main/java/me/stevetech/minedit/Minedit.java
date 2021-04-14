@@ -1,4 +1,4 @@
-package me.stevetech.mceddit;
+package me.stevetech.minedit;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 
-public class MCeddit extends JavaPlugin {
+public class Minedit extends JavaPlugin {
     // Create Player Storage File Variables
     private File playerConfigFile;
     private FileConfiguration playerConfig;

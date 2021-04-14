@@ -1,4 +1,4 @@
-package me.stevetech.mceddit;
+package me.stevetech.minedit;
 
 import com.bobacadodl.imgmessage.ImageChar;
 import com.bobacadodl.imgmessage.ImageMessage;
@@ -19,9 +19,9 @@ import java.time.Instant;
 import java.util.Arrays;
 
 public class Commands implements CommandExecutor {
-    private final MCeddit plugin;
+    private final Minedit plugin;
 
-    public Commands(MCeddit plugin) {
+    public Commands(Minedit plugin) {
         this.plugin = plugin;
     }
 
@@ -30,7 +30,7 @@ public class Commands implements CommandExecutor {
 
         final String messagePrefix = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("PluginPrefix") + " ");
 
-        if ((cmd.getName().equalsIgnoreCase("LinkReddit")) && (sender.hasPermission("mceddit.link"))) {
+        if ((cmd.getName().equalsIgnoreCase("LinkReddit")) && (sender.hasPermission("minedit.link"))) {
             if (sender instanceof Player) {
                 if (args.length == 1) {
                     sender.sendMessage(messagePrefix + ChatColor.AQUA + "Loading...");
@@ -60,7 +60,7 @@ public class Commands implements CommandExecutor {
             } else plugin.getLogger().warning("You need to be a player to run this command.");
         }
 
-        if ((cmd.getName().equalsIgnoreCase("reddit")) && (sender.hasPermission("mceddit.view"))) {
+        if ((cmd.getName().equalsIgnoreCase("reddit")) && (sender.hasPermission("minedit.view"))) {
             if (sender instanceof Player) {
                 sender.sendMessage(messagePrefix + ChatColor.AQUA + "Loading...");
                 Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -111,7 +111,7 @@ public class Commands implements CommandExecutor {
             } else plugin.getLogger().warning("You need to be a player to run this command.");
         }
 
-        if ((cmd.getName().equalsIgnoreCase("redditpost")) && (sender.hasPermission("mceddit.view"))) {
+        if ((cmd.getName().equalsIgnoreCase("redditpost")) && (sender.hasPermission("minedit.view"))) {
             if (sender instanceof Player) {
                 if (args.length == 1 || args.length == 2) {
                     sender.sendMessage(messagePrefix + ChatColor.AQUA + "Loading...");
@@ -249,7 +249,7 @@ public class Commands implements CommandExecutor {
         }
 
 
-        if ((cmd.getName().equalsIgnoreCase("redditvote")) && (sender.hasPermission("mceddit.vote"))) {
+        if ((cmd.getName().equalsIgnoreCase("redditvote")) && (sender.hasPermission("minedit.vote"))) {
             plugin.getLogger().info(Arrays.toString(plugin.playerSessions.get(player)) + Instant.now().getEpochSecond());
             if (sender instanceof Player) {
                 if (args.length == 2) {

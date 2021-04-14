@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>me.stevetech.mceddit</groupId>
-    <artifactId>MCeddit</artifactId>
+    <groupId>me.stevetech.minedit</groupId>
+    <artifactId>Minedit</artifactId>
     <version>2.0-SNAPSHOT</version>
 
     <properties>
@@ -33,7 +33,7 @@
                     <relocations>
                         <relocation>
                             <pattern>org.unbescape.unbescape</pattern>
-                            <shadedPattern>me.stevetech.mceddit.libraries.unbescape</shadedPattern>
+                            <shadedPattern>me.stevetech.minedit.libraries.unbescape</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>

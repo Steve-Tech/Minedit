@@ -1,4 +1,4 @@
-package me.stevetech.mceddit;
+package me.stevetech.minedit;
 
 import org.bukkit.*;
 import org.bukkit.entity.Firework;
@@ -17,11 +17,11 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 public class CakeDay implements Listener {
-    private final MCeddit plugin;
+    private final Minedit plugin;
     // Keeps track of the redeemed players so they don't get multiple cakes
     private final ArrayList<UUID> redeemedPlayers = new ArrayList<UUID>();
 
-    public CakeDay(MCeddit plugin) {
+    public CakeDay(Minedit plugin) {
         this.plugin = plugin;
     }
 
@@ -52,7 +52,7 @@ public class CakeDay implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         final Player player = event.getPlayer();
 
-        if (player.hasPermission("mceddit.cakeday") &&
+        if (player.hasPermission("minedit.cakeday") &&
                 plugin.getPlayerConfig().contains(player.getUniqueId().toString())) {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
                 @Override
@@ -68,13 +68,13 @@ public class CakeDay implements Listener {
                                 @Override
                                 public void run() {
                                     plugin.getServer().broadcastMessage(ChatColor.GOLD + "It's " + player.getName() + "'s Reddit Cake Day Today!");
-                                    if (!player.hasPermission("mceddit.cakeday.givecake"))
+                                    if (!player.hasPermission("minedit.cakeday.givecake"))
                                         player.sendMessage(ChatColor.GOLD + "Happy Cake Day " + player.getName() + "!");
                                     else {
                                         player.sendMessage(ChatColor.GOLD + "Happy Cake Day " + player.getName() + "! Here's a Cake to Celebrate!");
                                         player.getInventory().addItem(bakeCake(player.getName() + "'s Cake", "A Cake for your Reddit Cake Day"));
                                     }
-                                    if (player.hasPermission("mceddit.cakeday.firework")) firework(player);
+                                    if (player.hasPermission("minedit.cakeday.firework")) firework(player);
                                 }
                             });
                         }
